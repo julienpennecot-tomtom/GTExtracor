@@ -18,6 +18,7 @@ include_directories(src ${EIGEN3_INCLUDE_DIR})
 # add the executable
 set(SRC
     src/main.cpp
+    src/nvmreader.cpp
 )
 
 add_executable(GTExtractor ${SRC})

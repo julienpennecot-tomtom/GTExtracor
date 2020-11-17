@@ -1,7 +1,8 @@
 #include <iostream>
 
+#include "nvmreader.hpp"
+
 int main() {
-    std::cout << "Hello world" << std::endl;
 
-
+    NVMReader reader("/home/julien/projects/scout/data/stereo_pointcloud/scene.nvm");
 }
