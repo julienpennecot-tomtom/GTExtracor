@@ -20,22 +20,22 @@ public:
         ss >> b;
         m_Color = Eigen::Vector3i(r, g, b);
         // The next field is the number of measurements, but as the nvm file was generated, it is always 1, so we do not care about this value
-        uint dummy;
+        int dummy;
         ss >> dummy;
-
         ss >> m_ImageIndex;
-
     }
+
+    Point(const Eigen::Vector3d& pos, const Eigen::Vector3i& color) : m_Pos(pos), m_Color(color), m_ImageIndex(-1) {}
 
     ~Point() {}
 
     inline const Eigen::Vector3d& pos() const {return m_Pos;}
     inline const Eigen::Vector3i& color() const {return m_Color;}
-    inline const uint imIndex() const {return m_ImageIndex;}
+    inline const int imIndex() const {return m_ImageIndex;}
 
 
 private:
     Eigen::Vector3d m_Pos;
     Eigen::Vector3i m_Color;
-    uint m_ImageIndex;
+    int m_ImageIndex;
 };

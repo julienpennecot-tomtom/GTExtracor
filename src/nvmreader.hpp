@@ -4,6 +4,15 @@
 
 #include "camera.hpp"
 #include "point.hpp"
+#include "pointcloud.hpp"
+
+struct Intrinsics
+{
+    float fx;
+    float cx;
+    float fy;
+    float cy;
+};
 
 
 class NVMReader
@@ -21,11 +30,13 @@ public:
     NVMReader(const std::string& filepath);
     ~NVMReader();
 
-private:
-    unsigned int m_nCameras;
-    unsigned int m_nPoints;
-    std::vector<Camera> m_Cameras;
-    std::vector<Point> m_Points;
+    inline const PointCloud& getPoints() const {return m_Cloud;}
+    inline const Intrinsics& getIntrinsices() const {return m_Intrinsics;}
+    inline const std::vector<Camera>& getCameras() const {return m_Cameras;}
 
+private:
+    PointCloud m_Cloud;
+    std::vector<Camera> m_Cameras;
+    Intrinsics m_Intrinsics;
 };
 
