@@ -23,12 +23,24 @@ public:
     PointCloud createPointCloudWithCameraDirections() const;
     PointCloud createPointCloudWithFrustum() const;
 
+//    PointCloud createPointCloudCenterAndYDirections(int cameraIdx) const;
     PointCloud getPointsAssociatedWithDetectionOnFrame(int i, Detection& detection) const;
+    PointCloud createPointCloudCenterAxisFrustum(int cameraIdx) const;
+
+    void addFrustum(PointCloud& cloud,
+                    const Eigen::Vector3d& center,
+                    const Eigen::Quaterniond& q,
+                    float left,
+                    float right,
+                    float bottom,
+                    float top,
+                    const Eigen::Vector3i& color
+                   ) const;
 
 private:
     Eigen::Vector2d convertCoordSys(const Eigen::Vector2d& v) const;
     // Order: top left, top right, bottom right, bottom left
-    std::array<Eigen::Vector2d, 4> convertBBX(const Detection& detection) const;
+//    std::array<Eigen::Vector2d, 4> convertBBX(const Detection& detection) const;
     Eigen::Vector3d project2dPointIn3dSpace(const Eigen::Vector2d& p) const;
 
 private:

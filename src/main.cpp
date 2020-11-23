@@ -12,9 +12,9 @@ int main() {
     auto detections = detectionsReader.detections();
     std::cout << "# detections " << detections.size() << std::endl;
 
-    for (const auto &detectionFrame : detections) {
-            std::cout << detectionFrame.first << ": " << detectionFrame.second.size() << '\n';
-        }
+//    for (const auto &detectionFrame : detections) {
+//            std::cout << detectionFrame.first << ": " << detectionFrame.second.size() << '\n';
+//        }
 
     // Read NVM
     NVMReader nvmreader("/home/julien/projects/scout/data/stereo_pointcloud/scene.nvm");
@@ -44,6 +44,25 @@ int main() {
         frame.add(cloud.filterForFrame(i));
     }
     frame.exportPLY("frame.ply");
+
+    // Create and export a frustum for the whole FOV
+    bboxPointsExtractor.createPointCloudCenterAxisFrustum(90).exportPLY("CenterAxisFrustum.ply");
+
+
+    // Create and export a frustum for a detection
+    PointCloud detectionFrustum;
+    Camera camera = nvmreader.getCameras()[90];
+    Detection detection = detections[frameKey][0];
+    bboxPointsExtractor.addFrustum(detectionFrustum,
+                                    camera.center(),
+                                    camera.quaternion().inverse(),
+                                    detection.x,
+                                    detection.x + detection.w,
+                                    detection.y,
+                                    detection.y + detection.h,
+                                    Eigen::Vector3i(255, 255, 255)
+                                   );
+    detectionFrustum.exportPLY("DetectionFrustum90.ply");
 
     PointCloud sign;
     for(int i = 80; i < 100; i++)

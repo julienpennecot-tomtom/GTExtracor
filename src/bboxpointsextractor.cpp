@@ -150,23 +150,23 @@ Eigen::Vector2d BBoxPointsExtractor::convertCoordSys(const Eigen::Vector2d& v) c
 //    return Eigen::Vector2d(v[0] - cx, v[1] - cy);
 }
 
-std::array<Eigen::Vector2d, 4> BBoxPointsExtractor::convertBBX(const Detection& detection) const
-{
-    float x = detection.x;
-    float y = detection.y;
-    float w = detection.w;
-    float h = detection.h;
-    std::cout << "detection: " << x << ", "<< y << ", "<< w << ", "<< h << std::endl;
+//std::array<Eigen::Vector2d, 4> BBoxPointsExtractor::convertBBX(const Detection& detection) const
+//{
+//    float x = detection.x;
+//    float y = detection.y;
+//    float w = detection.w;
+//    float h = detection.h;
+//    std::cout << "detection: " << x << ", "<< y << ", "<< w << ", "<< h << std::endl;
 
-    // Order: top left, top right, bottom right, bottom left
-    std::array<Eigen::Vector2d, 4> corners;
-    corners[0] = convertCoordSys(Eigen::Vector2d(x, y));
-    corners[1] = convertCoordSys(Eigen::Vector2d(x+w, y));
-    corners[2] = convertCoordSys(Eigen::Vector2d(x+w, y+h));
-    corners[3] = convertCoordSys(Eigen::Vector2d(x, y+h));
-    std::cout << "After conversion, top left: " << corners[0].transpose() << " , bottom right: " << corners[2].transpose() << std::endl;
-    return corners;
-}
+//    // Order: top left, top right, bottom right, bottom left
+//    std::array<Eigen::Vector2d, 4> corners;
+//    corners[0] = convertCoordSys(Eigen::Vector2d(x, y));
+//    corners[1] = convertCoordSys(Eigen::Vector2d(x+w, y));
+//    corners[2] = convertCoordSys(Eigen::Vector2d(x+w, y+h));
+//    corners[3] = convertCoordSys(Eigen::Vector2d(x, y+h));
+//    std::cout << "After conversion, top left: " << corners[0].transpose() << " , bottom right: " << corners[2].transpose() << std::endl;
+//    return corners;
+//}
 
 // This method intersects a ray going through the camera center and a point in the sensor (in pixel coordinates) with a plane
 // perpendicular to the principal axis at distance f of the center.
@@ -175,9 +175,11 @@ Eigen::Vector3d BBoxPointsExtractor::project2dPointIn3dSpace(const Eigen::Vector
     float f = m_Intrinsics.fx;
     float cx = m_Intrinsics.cx;
     float cy = m_Intrinsics.cy;
+    std::cout << "cx: " << cx << ",  cy: " << cy << std::endl;
 
 //    return Eigen::Vector3d(p[0] - cx, p[1] - cy, f);
-    return Eigen::Vector3d(p[0] - cx, cy - p[1], f);
+//    return Eigen::Vector3d(p[0] - cx, cy - p[1], f);
+    return Eigen::Vector3d(p[0] - cx, p[1] - cy, f);
 }
 
 PointCloud BBoxPointsExtractor::getPointsAssociatedWithDetectionOnFrame(int i, Detection& detection) const
@@ -194,6 +196,8 @@ PointCloud BBoxPointsExtractor::getPointsAssociatedWithDetectionOnFrame(int i, D
     Eigen::Vector3d tr_camera = project2dPointIn3dSpace(Eigen::Vector2d(detection.x + detection.w, detection.y));
     Eigen::Vector3d br_camera = project2dPointIn3dSpace(Eigen::Vector2d(detection.x + detection.w, detection.y + detection.h));
     Eigen::Vector3d bl_camera = project2dPointIn3dSpace(Eigen::Vector2d(detection.x, detection.y + detection.h));
+    std::cout << "Top left:     " << Eigen::Vector2d(detection.x, detection.y).transpose() << " -> " << tl_camera.transpose() << std::endl;
+    std::cout << "bottom right: " << Eigen::Vector2d(detection.x, detection.y).transpose() << " -> " << br_camera.transpose() << std::endl;
 
     Eigen::Vector3d tl = center + (q * tl_camera);
     Eigen::Vector3d tr = center + (q * tr_camera);
@@ -226,14 +230,178 @@ PointCloud BBoxPointsExtractor::getPointsAssociatedWithDetectionOnFrame(int i, D
     for (auto& point : m_Cloud.points())
     {
         if (point.imIndex() == i
-            && (point.pos()).dot(leftPlaneNormal) > dLeftPlane
-//            && (point.pos()).dot(topPlaneNormal) > dTopPlane
-            && (point.pos()).dot(rightPlaneNormal) > dRightPlane
-//            && (point.pos()).dot(bottomPlaneNormal) > dBottomPlane
+//            && (point.pos()).dot(leftPlaneNormal) > dLeftPlane
+            && (point.pos()).dot(topPlaneNormal) > dTopPlane
+//            && (point.pos()).dot(rightPlaneNormal) > dRightPlane
+            && (point.pos()).dot(bottomPlaneNormal) > dBottomPlane
            )
         {
             cloud.push_back(point);
         }
     }
     return cloud;
+}
+
+PointCloud BBoxPointsExtractor::createPointCloudCenterAxisFrustum(int cameraIdx) const
+{
+    const int nPointsPerLine = 100;
+    const int nPointsPerSphere = 200;
+
+    const float lineLength = 1.0;
+    const float sphereRadius = 0.2;
+    Eigen::Vector3i colorSphere(255, 0, 255);
+    Eigen::Vector3i colorXAxis(255, 0, 0);
+    Eigen::Vector3i colorYAxis(0, 255, 0);
+    Eigen::Vector3i colorZAxis(0, 0, 255);
+    Eigen::Vector3i colorFrustum(255, 255, 255);
+
+
+    int nPoints = 7 * nPointsPerLine + nPointsPerSphere;
+
+    PointCloud cloud;
+    cloud.reserve(nPoints);
+
+    Camera camera = m_Cameras[cameraIdx];
+    Eigen::Vector3d center(camera.center());
+    Eigen::Quaterniond q = camera.quaternion().inverse();
+
+    // First the axis
+    Eigen::Vector3d dirX = q * Eigen::Vector3d(1.0, 0.0, 0.0);
+    dirX.normalize();
+    for (int i = 0; i < nPointsPerLine; i++)
+    {
+        Eigen::Vector3d p = center + dirX * float(i) * lineLength / nPointsPerLine;
+        cloud.push_back(Point(p, colorXAxis));
+    }
+
+    Eigen::Vector3d dirY = q * Eigen::Vector3d(0.0, 1.0, 0.0);
+    dirY.normalize();
+    for (int i = 0; i < nPointsPerLine; i++)
+    {
+        Eigen::Vector3d p = center + dirY * float(i) * lineLength / nPointsPerLine;
+        cloud.push_back(Point(p, colorYAxis));
+    }
+
+    Eigen::Vector3d dirZ = q * Eigen::Vector3d(0.0, 0.0, 1.0);
+    dirZ.normalize();
+    for (int i = 0; i < nPointsPerLine; i++)
+    {
+        Eigen::Vector3d p = center + dirZ * float(i) * lineLength / nPointsPerLine;
+        cloud.push_back(Point(p, colorZAxis));
+    }
+
+    // Then the sphere:
+    std::default_random_engine generator;
+    std::uniform_real_distribution<double> distribution(-1.0,1.0);
+
+    for (int i = 0; i < nPointsPerSphere; i++)
+    {
+        double x = distribution(generator);
+        double y = distribution(generator);
+        double z = distribution(generator);
+        Eigen::Vector3d p(x, y, z);
+        Eigen::Vector3d pos = center + sphereRadius * p.normalized();
+        Point point(pos, colorSphere);
+        cloud.push_back(point);
+    }
+
+    float cx = m_Intrinsics.cx;
+    float cy = m_Intrinsics.cy;
+    addFrustum(cloud, center, q, 0, 2*cx, 0, 2*cy, colorFrustum);
+
+//    // Finally the frustum:
+//    float cx = m_Intrinsics.cx;
+//    float cy = m_Intrinsics.cy;
+//    float f = m_Intrinsics.fx;
+
+//    // topLeft
+//    Eigen::Vector3d topLeft = q * Eigen::Vector3d(-cx, cy, f);
+//    topLeft.normalize();
+//    for (int i = 0; i < nPointsPerLine; i++)
+//    {
+//        Eigen::Vector3d p = center + topLeft * float(i) * lineLength / nPointsPerLine;
+//        cloud.push_back(Point(p, colorFrustum));
+//    }
+
+//    // topRight
+//    Eigen::Vector3d topRight = q * Eigen::Vector3d(cx, cy, f);
+//    topRight.normalize();
+//    for (int i = 0; i < nPointsPerLine; i++)
+//    {
+//        Eigen::Vector3d p = center + topRight * float(i) * lineLength / nPointsPerLine;
+//        cloud.push_back(Point(p, colorFrustum));
+//    }
+
+//    // bottomRight
+//    Eigen::Vector3d bottomRight = q * Eigen::Vector3d(cx, -cy, f);
+//    bottomRight.normalize();
+//    for (int i = 0; i < nPointsPerLine; i++)
+//    {
+//        Eigen::Vector3d p = center + bottomRight * float(i) * lineLength / nPointsPerLine;
+//        cloud.push_back(Point(p, colorFrustum));
+//    }
+
+//    // bottomLeft
+//    Eigen::Vector3d bottomLeft = q * Eigen::Vector3d(-cx, -cy, f);
+//    bottomLeft.normalize();
+//    for (int i = 0; i < nPointsPerLine; i++)
+//    {
+//        Eigen::Vector3d p = center + bottomLeft * float(i) * lineLength / nPointsPerLine;
+//        cloud.push_back(Point(p, colorFrustum));
+//    }
+
+    return cloud;
+}
+
+void BBoxPointsExtractor::addFrustum(PointCloud& cloud,
+                                     const Eigen::Vector3d& center,
+                                     const Eigen::Quaterniond& q,
+                                     float left,
+                                     float right,
+                                     float bottom,
+                                     float top,
+                                     const Eigen::Vector3i& color
+                                     ) const
+{
+//    float cx = m_Intrinsics.cx;
+//    float cy = m_Intrinsics.cy;
+//    float f = m_Intrinsics.fx;
+    const int nPointsPerLine = 1000;
+    const float lineLength = 20.0;
+
+    // topLeft
+    Eigen::Vector3d topLeft = q * project2dPointIn3dSpace(Eigen::Vector2d(left, top));
+    topLeft.normalize();
+    for (int i = 0; i < nPointsPerLine; i++)
+    {
+        Eigen::Vector3d p = center + topLeft * float(i) * lineLength / nPointsPerLine;
+        cloud.push_back(Point(p, color));
+    }
+
+    // topRight
+    Eigen::Vector3d topRight = q * project2dPointIn3dSpace(Eigen::Vector2d(right, top));
+    topRight.normalize();
+    for (int i = 0; i < nPointsPerLine; i++)
+    {
+        Eigen::Vector3d p = center + topRight * float(i) * lineLength / nPointsPerLine;
+        cloud.push_back(Point(p, color));
+    }
+
+    // bottomRight
+    Eigen::Vector3d bottomRight = q * project2dPointIn3dSpace(Eigen::Vector2d(right, bottom));
+    bottomRight.normalize();
+    for (int i = 0; i < nPointsPerLine; i++)
+    {
+        Eigen::Vector3d p = center + bottomRight * float(i) * lineLength / nPointsPerLine;
+        cloud.push_back(Point(p, color));
+    }
+
+    // bottomLeft
+    Eigen::Vector3d bottomLeft = q * project2dPointIn3dSpace(Eigen::Vector2d(left, bottom));
+    bottomLeft.normalize();
+    for (int i = 0; i < nPointsPerLine; i++)
+    {
+        Eigen::Vector3d p = center + bottomLeft * float(i) * lineLength / nPointsPerLine;
+        cloud.push_back(Point(p, color));
+    }
 }
