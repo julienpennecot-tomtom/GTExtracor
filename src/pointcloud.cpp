@@ -65,3 +65,23 @@ void PointCloud::exportPLY(const std::string& filename) const
                 << point.color()[2]<< std::endl;
     }
 }
+
+PointCloud PointCloud::filterForFrame(int i) const
+{
+    PointCloud cloud;
+    for (const auto& point : m_Points)
+    {
+        if (point.imIndex() == i) {
+            cloud.push_back(point);
+        }
+    }
+    return cloud;
+}
+
+void PointCloud::add(const PointCloud& cloud)
+{
+    for (const auto& point : cloud.points())
+    {
+        this->push_back(point);
+    }
+}

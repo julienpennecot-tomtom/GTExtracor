@@ -15,7 +15,11 @@ public:
     inline uint size() const {return m_Points.size();}
 
     void exportPCD(const std::string& filename) const;
-    void exportPLY(const std::string& filename) const ;
+    void exportPLY(const std::string& filename) const;
+    const std::vector<Point>& points() const {return m_Points;}
+
+    PointCloud filterForFrame(int i) const;
+    void add(const PointCloud& cloud);
 
     static uint32_t rgb2uint(uint8_t r, uint8_t g, uint8_t b)
     {

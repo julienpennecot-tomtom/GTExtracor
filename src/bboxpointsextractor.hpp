@@ -15,7 +15,7 @@ public:
     BBoxPointsExtractor(const PointCloud& points,
                         const std::vector<Camera>& cameras,
                         const Intrinsics& intrinsics,
-                        const std::vector<FrameDetections>& detections
+                        const Detections& detections
                         );
 
     void exportFrustumAssociatedToFrame(int frameIdx) const;
@@ -23,7 +23,7 @@ public:
     PointCloud createPointCloudWithCameraDirections() const;
     PointCloud createPointCloudWithFrustum() const;
 
-    std::vector<Point> getPointsAssociatedWithFrame(int i, Detection& detection) const;
+    PointCloud getPointsAssociatedWithDetectionOnFrame(int i, Detection& detection) const;
 
 private:
     Eigen::Vector2d convertCoordSys(const Eigen::Vector2d& v) const;
@@ -35,6 +35,6 @@ private:
     const PointCloud& m_Cloud;
     const std::vector<Camera>& m_Cameras;
     const Intrinsics& m_Intrinsics;
-    const std::vector<FrameDetections>& m_Detections;
+    const Detections& m_Detections;
 
 };

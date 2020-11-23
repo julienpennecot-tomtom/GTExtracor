@@ -3,11 +3,12 @@
 #include <eigen3/Eigen/Core>
 #include <random>
 #include <fstream>
+#include <iostream>
 
 BBoxPointsExtractor::BBoxPointsExtractor(const PointCloud& cloud,
                                          const std::vector<Camera>& cameras,
                                          const Intrinsics& intrinsics,
-                                         const std::vector<FrameDetections>& detections)
+                                         const Detections& detections)
     : m_Cloud(cloud),
       m_Cameras(cameras),
       m_Intrinsics(intrinsics),
@@ -132,13 +133,21 @@ PointCloud BBoxPointsExtractor::createPointCloudWithFrustum() const
 Eigen::Vector2d BBoxPointsExtractor::convertCoordSys(const Eigen::Vector2d& v) const
 {
     // TODO get the image size automatically.
-    const float W = 2048;
-    const float H = 1536;
+    const float W = 2048.f;
+    const float H = 1536.f;
 
     float cx = m_Intrinsics.cx;
     float cy = m_Intrinsics.cy;
 
-    return Eigen::Vector2d(-cx + v[0]*2*cx/W,  cy - v[1]*2*cy/H);
+    float fx = m_Intrinsics.fx;
+    float fy = m_Intrinsics.fy;
+
+//    Eigen::Vector2d converted(v[0]*2*cx/W - cx, v[1]*2*cy/H - cy);
+//    Eigen::Vector2d converted((v[0] - cx)/fx, (v[1] - cy)/fy);
+//    std::cout << v.transpose() << " -> " << converted.transpose() << std::endl;
+
+    return Eigen::Vector2d(v[0]*2*cx/W -cx, -v[1]*2*cy/H +cy);
+//    return Eigen::Vector2d(v[0] - cx, v[1] - cy);
 }
 
 std::array<Eigen::Vector2d, 4> BBoxPointsExtractor::convertBBX(const Detection& detection) const
@@ -147,6 +156,7 @@ std::array<Eigen::Vector2d, 4> BBoxPointsExtractor::convertBBX(const Detection& 
     float y = detection.y;
     float w = detection.w;
     float h = detection.h;
+    std::cout << "detection: " << x << ", "<< y << ", "<< w << ", "<< h << std::endl;
 
     // Order: top left, top right, bottom right, bottom left
     std::array<Eigen::Vector2d, 4> corners;
@@ -154,10 +164,11 @@ std::array<Eigen::Vector2d, 4> BBoxPointsExtractor::convertBBX(const Detection& 
     corners[1] = convertCoordSys(Eigen::Vector2d(x+w, y));
     corners[2] = convertCoordSys(Eigen::Vector2d(x+w, y+h));
     corners[3] = convertCoordSys(Eigen::Vector2d(x, y+h));
+    std::cout << "After conversion, top left: " << corners[0].transpose() << " , bottom right: " << corners[2].transpose() << std::endl;
     return corners;
 }
 
-std::vector<Point> BBoxPointsExtractor::getPointsAssociatedWithFrame(int i, Detection& detection) const
+PointCloud BBoxPointsExtractor::getPointsAssociatedWithDetectionOnFrame(int i, Detection& detection) const
 {
     float f = m_Intrinsics.fx;
     float cx = m_Intrinsics.cx;
@@ -175,11 +186,31 @@ std::vector<Point> BBoxPointsExtractor::getPointsAssociatedWithFrame(int i, Dete
 
 
     Eigen::Vector3d leftPlaneNormal = ((tl - center).cross(bl - center)).normalized();
-    float d = leftPlaneNormal.dot(center);
+    float dLeftPlane = leftPlaneNormal.dot(center);
+
+    Eigen::Vector3d topPlaneNormal = ((tr - center).cross(tl - center)).normalized();
+    float dTopPlane = topPlaneNormal.dot(center);
+
+    Eigen::Vector3d rightPlaneNormal = ((br - center).cross(tr - center)).normalized();
+    float dRightPlane = rightPlaneNormal.dot(center);
+
+    Eigen::Vector3d bottomPlaneNormal = ((bl - center).cross(br - center)).normalized();
+    float dBottomPlane = bottomPlaneNormal.dot(center);
 
     // Now that we have the equation of the left plane of the bounding box, we filter points to get only
     // the points on the right of this plane.
-
-
-
+    PointCloud cloud;
+    for (auto& point : m_Cloud.points())
+    {
+        if (point.imIndex() == i
+            && (point.pos()).dot(leftPlaneNormal) > dLeftPlane
+//            && (point.pos()).dot(topPlaneNormal) > dTopPlane
+            && (point.pos()).dot(rightPlaneNormal) > dRightPlane
+//            && (point.pos()).dot(bottomPlaneNormal) > dBottomPlane
+           )
+        {
+            cloud.push_back(point);
+        }
+    }
+    return cloud;
 }

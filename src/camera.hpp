@@ -33,6 +33,7 @@ public:
     inline const Eigen::Quaterniond& quaternion() const {return m_Quaternion;}
     inline const Eigen::Vector3d& center() const {return m_Center;}
     inline const Eigen::Vector3d& position() const {return m_Center;}
+    inline std::string key() const {return m_Filename.substr(6,22);}
 
 private:
     std::string m_Filename;

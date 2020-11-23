@@ -27,12 +27,11 @@ DetectionsReader::DetectionsReader(const std::string& dirpath)
     std::sort(paths.begin(), paths.end(), std::less<boost::filesystem::path>());
 
     // We can now start reading the files.
-    m_Detections.reserve(paths.size());
     for (int i = 0; i < paths.size(); i++)
     {
         const auto& path = paths[i];
         std::vector<Detection> frameDetections;
-//        std::cout << path.c_str() << std::endl;
+        std::string key = path.string().substr(0, 22);
         std::string line;
         boost::filesystem::path filepath = boost::filesystem::path(dirpath) / boost::filesystem::path(path);
         std::ifstream myfile (filepath);
@@ -66,6 +65,6 @@ DetectionsReader::DetectionsReader(const std::string& dirpath)
         } else {
             std::cout << "Could not open file: " << filepath << std::endl;
         }
-        m_Detections.push_back(frameDetections);
+        m_Detections[key] = frameDetections;
     }
 }
