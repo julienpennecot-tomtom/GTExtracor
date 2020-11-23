@@ -29,7 +29,7 @@ private:
     Eigen::Vector2d convertCoordSys(const Eigen::Vector2d& v) const;
     // Order: top left, top right, bottom right, bottom left
     std::array<Eigen::Vector2d, 4> convertBBX(const Detection& detection) const;
-
+    Eigen::Vector3d project2dPointIn3dSpace(const Eigen::Vector2d& p) const;
 
 private:
     const PointCloud& m_Cloud;

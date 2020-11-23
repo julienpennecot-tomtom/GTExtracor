@@ -168,6 +168,18 @@ std::array<Eigen::Vector2d, 4> BBoxPointsExtractor::convertBBX(const Detection& 
     return corners;
 }
 
+// This method intersects a ray going through the camera center and a point in the sensor (in pixel coordinates) with a plane
+// perpendicular to the principal axis at distance f of the center.
+Eigen::Vector3d BBoxPointsExtractor::project2dPointIn3dSpace(const Eigen::Vector2d& p) const
+{
+    float f = m_Intrinsics.fx;
+    float cx = m_Intrinsics.cx;
+    float cy = m_Intrinsics.cy;
+
+//    return Eigen::Vector3d(p[0] - cx, p[1] - cy, f);
+    return Eigen::Vector3d(p[0] - cx, cy - p[1], f);
+}
+
 PointCloud BBoxPointsExtractor::getPointsAssociatedWithDetectionOnFrame(int i, Detection& detection) const
 {
     float f = m_Intrinsics.fx;
@@ -177,12 +189,23 @@ PointCloud BBoxPointsExtractor::getPointsAssociatedWithDetectionOnFrame(int i, D
     Eigen::Vector3d center(camera.center());
     Eigen::Quaterniond q = camera.quaternion().inverse();
 
-    auto corners = convertBBX(detection);
 
-    Eigen::Vector3d tl = center + (q * Eigen::Vector3d(corners[0][0], corners[0][1], f)).normalized();
-    Eigen::Vector3d tr = center + (q * Eigen::Vector3d(corners[1][0], corners[1][1], f)).normalized();
-    Eigen::Vector3d br = center + (q * Eigen::Vector3d(corners[2][0], corners[2][1], f)).normalized();
-    Eigen::Vector3d bl = center + (q * Eigen::Vector3d(corners[3][0], corners[3][1], f)).normalized();
+    Eigen::Vector3d tl_camera = project2dPointIn3dSpace(Eigen::Vector2d(detection.x, detection.y));
+    Eigen::Vector3d tr_camera = project2dPointIn3dSpace(Eigen::Vector2d(detection.x + detection.w, detection.y));
+    Eigen::Vector3d br_camera = project2dPointIn3dSpace(Eigen::Vector2d(detection.x + detection.w, detection.y + detection.h));
+    Eigen::Vector3d bl_camera = project2dPointIn3dSpace(Eigen::Vector2d(detection.x, detection.y + detection.h));
+
+    Eigen::Vector3d tl = center + (q * tl_camera);
+    Eigen::Vector3d tr = center + (q * tr_camera);
+    Eigen::Vector3d br = center + (q * br_camera);
+    Eigen::Vector3d bl = center + (q * bl_camera);
+
+//    auto corners = convertBBX(detection);
+
+//    Eigen::Vector3d tl = center + (q * Eigen::Vector3d(corners[0][0], corners[0][1], f)).normalized();
+//    Eigen::Vector3d tr = center + (q * Eigen::Vector3d(corners[1][0], corners[1][1], f)).normalized();
+//    Eigen::Vector3d br = center + (q * Eigen::Vector3d(corners[2][0], corners[2][1], f)).normalized();
+//    Eigen::Vector3d bl = center + (q * Eigen::Vector3d(corners[3][0], corners[3][1], f)).normalized();
 
 
     Eigen::Vector3d leftPlaneNormal = ((tl - center).cross(bl - center)).normalized();
