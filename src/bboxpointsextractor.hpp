@@ -37,6 +37,13 @@ public:
                     const Eigen::Vector3i& color
                    ) const;
 
+    void addSphere(PointCloud& cloud,
+                   const Eigen::Vector3d& center,
+                   const Eigen::Vector3i& color,
+                   float sphereRadius,
+                   int nPoints
+                   ) const;
+
 private:
     Eigen::Vector2d convertCoordSys(const Eigen::Vector2d& v) const;
     // Order: top left, top right, bottom right, bottom left

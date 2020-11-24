@@ -35,48 +35,56 @@ int main() {
 //    PointCloud frustumsCloud = bboxPointsExtractor.createPointCloudWithFrustum();
 //    frustumsCloud.exportPLY("frustums.ply");
 
+//    // Create and export a frustum for the whole FOV
+//    bboxPointsExtractor.createPointCloudCenterAxisFrustum(90).exportPLY("CenterAxisFrustum.ply");
 
     BBoxPointsExtractor bboxPointsExtractor(nvmreader.getPoints(), nvmreader.getCameras(), nvmreader.getIntrinsices(), detections);
     // Let's first test with frame 90 as it has a big sign.
-    PointCloud frame;
+    PointCloud accumulatedFrames;
     for (int i = 80; i < 110; i++)
     {
+        accumulatedFrames.add(cloud.filterForFrame(i));
+        PointCloud frame;
         frame.add(cloud.filterForFrame(i));
+        frame.exportPLY("frame" + std::to_string(i)+".ply");
     }
-    frame.exportPLY("frame.ply");
-
-    // Create and export a frustum for the whole FOV
-    bboxPointsExtractor.createPointCloudCenterAxisFrustum(90).exportPLY("CenterAxisFrustum.ply");
+    accumulatedFrames.exportPLY("accumulatedFrames.ply");
 
 
     // Create and export a frustum for a detection
-    PointCloud detectionFrustum;
-    Camera camera = nvmreader.getCameras()[90];
-    Detection detection = detections[frameKey][0];
-    bboxPointsExtractor.addFrustum(detectionFrustum,
-                                    camera.center(),
-                                    camera.quaternion().inverse(),
-                                    detection.x,
-                                    detection.x + detection.w,
-                                    detection.y,
-                                    detection.y + detection.h,
-                                    Eigen::Vector3i(255, 255, 255)
-                                   );
-    detectionFrustum.exportPLY("DetectionFrustum90.ply");
+    for (int i = 85; i < 96; i++)
+    {
+        PointCloud detectionFrustum;
+        Camera camera = nvmreader.getCameras()[i];
+        Detection detection = detections[frameKey][0];
+        bboxPointsExtractor.addFrustum(detectionFrustum,
+                                        camera.center(),
+                                        camera.quaternion().inverse(),
+                                        detection.x,
+                                        detection.x + detection.w,
+                                        detection.y,
+                                        detection.y + detection.h,
+                                        Eigen::Vector3i(255, 255, 255)
+                                       );
+        detectionFrustum.exportPLY("DetectionFrustum" + std::to_string(i) + ".ply");
+        }
 
-    PointCloud sign;
+    PointCloud accumulatedSign;
     for(int i = 80; i < 100; i++)
     {
         std::string frameKey = nvmreader.getCameras()[i].key();
         std::cout << "\nFrame " << i << " key: " << frameKey << std::endl;
         if (detections[frameKey].size() > 0)
         {
+            PointCloud sign;
             Detection detection = detections[frameKey][0];
-            std::cout << "Detection: " <<  detection.x << ", " << detection.y << ", " << detection.w << ", " << detection.h << std::endl;
             sign.add(bboxPointsExtractor.getPointsAssociatedWithDetectionOnFrame(i, detection));
+            sign.exportPLY("sign"+std::to_string(i)+".ply");
+
+            accumulatedSign.add(sign);
         }
     }
-    sign.exportPLY("sign.ply");
+    accumulatedSign.exportPLY("accumulatedSign.ply");
 
     return 0;
 }

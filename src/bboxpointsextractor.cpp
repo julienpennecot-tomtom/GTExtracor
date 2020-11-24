@@ -199,18 +199,15 @@ PointCloud BBoxPointsExtractor::getPointsAssociatedWithDetectionOnFrame(int i, D
     std::cout << "Top left:     " << Eigen::Vector2d(detection.x, detection.y).transpose() << " -> " << tl_camera.transpose() << std::endl;
     std::cout << "bottom right: " << Eigen::Vector2d(detection.x, detection.y).transpose() << " -> " << br_camera.transpose() << std::endl;
 
-    Eigen::Vector3d tl = center + (q * tl_camera);
-    Eigen::Vector3d tr = center + (q * tr_camera);
-    Eigen::Vector3d br = center + (q * br_camera);
-    Eigen::Vector3d bl = center + (q * bl_camera);
+//    Eigen::Vector3d tl = center + (q * tl_camera);
+//    Eigen::Vector3d tr = center + (q * tr_camera);
+//    Eigen::Vector3d br = center + (q * br_camera);
+//    Eigen::Vector3d bl = center + (q * bl_camera);
 
-//    auto corners = convertBBX(detection);
-
-//    Eigen::Vector3d tl = center + (q * Eigen::Vector3d(corners[0][0], corners[0][1], f)).normalized();
-//    Eigen::Vector3d tr = center + (q * Eigen::Vector3d(corners[1][0], corners[1][1], f)).normalized();
-//    Eigen::Vector3d br = center + (q * Eigen::Vector3d(corners[2][0], corners[2][1], f)).normalized();
-//    Eigen::Vector3d bl = center + (q * Eigen::Vector3d(corners[3][0], corners[3][1], f)).normalized();
-
+    Eigen::Vector3d tl = center + (q * tl_camera).normalized()*20;
+    Eigen::Vector3d tr = center + (q * tr_camera).normalized()*20;
+    Eigen::Vector3d br = center + (q * br_camera).normalized()*20;
+    Eigen::Vector3d bl = center + (q * bl_camera).normalized()*20;
 
     Eigen::Vector3d leftPlaneNormal = ((tl - center).cross(bl - center)).normalized();
     float dLeftPlane = leftPlaneNormal.dot(center);
@@ -224,16 +221,28 @@ PointCloud BBoxPointsExtractor::getPointsAssociatedWithDetectionOnFrame(int i, D
     Eigen::Vector3d bottomPlaneNormal = ((bl - center).cross(br - center)).normalized();
     float dBottomPlane = bottomPlaneNormal.dot(center);
 
+    std::cout << "leftPlaneNormal: " << leftPlaneNormal.transpose() << std::endl;
+    std::cout << "rightPlaneNormal: " << rightPlaneNormal.transpose() << std::endl;
+    std::cout << "topPlaneNormal: " << topPlaneNormal.transpose() << std::endl;
+    std::cout << "bottomPlaneNormal: " << bottomPlaneNormal.transpose() << std::endl;
+
+//    PointCloud detectionCorners;
+//    addSphere(detectionCorners, tl, Eigen::Vector3i(0,0,255), 0.2, 100);
+//    addSphere(detectionCorners, tr, Eigen::Vector3i(0,0,255), 0.2, 100);
+//    addSphere(detectionCorners, br, Eigen::Vector3i(0,0,255), 0.2, 100);
+//    addSphere(detectionCorners, bl, Eigen::Vector3i(0,0,255), 0.2, 100);
+//    detectionCorners.exportPLY("DetectionCorners"+std::to_string(i)+".ply" );
+
     // Now that we have the equation of the left plane of the bounding box, we filter points to get only
     // the points on the right of this plane.
     PointCloud cloud;
     for (auto& point : m_Cloud.points())
     {
         if (point.imIndex() == i
-//            && (point.pos()).dot(leftPlaneNormal) > dLeftPlane
-            && (point.pos()).dot(topPlaneNormal) > dTopPlane
-//            && (point.pos()).dot(rightPlaneNormal) > dRightPlane
-            && (point.pos()).dot(bottomPlaneNormal) > dBottomPlane
+            && (point.pos()).dot(leftPlaneNormal) < dLeftPlane
+            && (point.pos()).dot(topPlaneNormal) < dTopPlane
+            && (point.pos()).dot(rightPlaneNormal) < dRightPlane
+            && (point.pos()).dot(bottomPlaneNormal) < dBottomPlane
            )
         {
             cloud.push_back(point);
@@ -309,47 +318,6 @@ PointCloud BBoxPointsExtractor::createPointCloudCenterAxisFrustum(int cameraIdx)
     float cy = m_Intrinsics.cy;
     addFrustum(cloud, center, q, 0, 2*cx, 0, 2*cy, colorFrustum);
 
-//    // Finally the frustum:
-//    float cx = m_Intrinsics.cx;
-//    float cy = m_Intrinsics.cy;
-//    float f = m_Intrinsics.fx;
-
-//    // topLeft
-//    Eigen::Vector3d topLeft = q * Eigen::Vector3d(-cx, cy, f);
-//    topLeft.normalize();
-//    for (int i = 0; i < nPointsPerLine; i++)
-//    {
-//        Eigen::Vector3d p = center + topLeft * float(i) * lineLength / nPointsPerLine;
-//        cloud.push_back(Point(p, colorFrustum));
-//    }
-
-//    // topRight
-//    Eigen::Vector3d topRight = q * Eigen::Vector3d(cx, cy, f);
-//    topRight.normalize();
-//    for (int i = 0; i < nPointsPerLine; i++)
-//    {
-//        Eigen::Vector3d p = center + topRight * float(i) * lineLength / nPointsPerLine;
-//        cloud.push_back(Point(p, colorFrustum));
-//    }
-
-//    // bottomRight
-//    Eigen::Vector3d bottomRight = q * Eigen::Vector3d(cx, -cy, f);
-//    bottomRight.normalize();
-//    for (int i = 0; i < nPointsPerLine; i++)
-//    {
-//        Eigen::Vector3d p = center + bottomRight * float(i) * lineLength / nPointsPerLine;
-//        cloud.push_back(Point(p, colorFrustum));
-//    }
-
-//    // bottomLeft
-//    Eigen::Vector3d bottomLeft = q * Eigen::Vector3d(-cx, -cy, f);
-//    bottomLeft.normalize();
-//    for (int i = 0; i < nPointsPerLine; i++)
-//    {
-//        Eigen::Vector3d p = center + bottomLeft * float(i) * lineLength / nPointsPerLine;
-//        cloud.push_back(Point(p, colorFrustum));
-//    }
-
     return cloud;
 }
 
@@ -363,9 +331,6 @@ void BBoxPointsExtractor::addFrustum(PointCloud& cloud,
                                      const Eigen::Vector3i& color
                                      ) const
 {
-//    float cx = m_Intrinsics.cx;
-//    float cy = m_Intrinsics.cy;
-//    float f = m_Intrinsics.fx;
     const int nPointsPerLine = 1000;
     const float lineLength = 20.0;
 
@@ -404,4 +369,29 @@ void BBoxPointsExtractor::addFrustum(PointCloud& cloud,
         Eigen::Vector3d p = center + bottomLeft * float(i) * lineLength / nPointsPerLine;
         cloud.push_back(Point(p, color));
     }
+}
+
+void BBoxPointsExtractor::addSphere(PointCloud& cloud,
+                                    const Eigen::Vector3d& center,
+                                    const Eigen::Vector3i& color,
+                                    float sphereRadius,
+                                    int nPoints
+                                    ) const
+{
+    std::default_random_engine generator;
+    std::uniform_real_distribution<double> distribution(-1.0,1.0);
+
+    cloud.reserve(cloud.size() + nPoints);
+
+    for (int i = 0; i < nPoints; i++)
+    {
+        double x = distribution(generator);
+        double y = distribution(generator);
+        double z = distribution(generator);
+        Eigen::Vector3d p(x, y, z);
+        Eigen::Vector3d pos = center + sphereRadius * p.normalized();
+        Point point(pos, color);
+        cloud.push_back(point);
+    }
+
 }
