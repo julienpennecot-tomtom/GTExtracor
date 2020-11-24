@@ -20,36 +20,25 @@ int main() {
     NVMReader nvmreader("/home/julien/projects/scout/data/stereo_pointcloud/scene.nvm");
     PointCloud cloud = nvmreader.getPoints();
 
+    // Export some point clouds for visualization/debug purpose
+    //std::cout << "Exporting full scene. It might take a while" << std::endl;
+    //cloud.exportPLY("scene.ply");
+    PointCloud centersCloud = nvmreader.createPointCloudWithCameraCenters(0.2, Eigen::Vector3i(255, 0, 0), 100);
+    centersCloud.exportPLY("centers.ply");
+    PointCloud camDirsCloud = nvmreader.createPointCloudWithCameraDirections(1., Eigen::Vector3i(255, 255, 255), 100);
+    camDirsCloud.exportPLY("cam_dirs.ply");
+
+    // Let's first test with a big sign around frame 90
+    PointCloud accumulatedFrames = nvmreader.createPointCloudFromFrameRange(80, 100);
+    accumulatedFrames.exportPLY("accumulatedFrames.ply");
+
+    // Now we can start extracting signs.
+    BBoxPointsExtractor bboxPointsExtractor(nvmreader.getPoints(), nvmreader.getCameras(), nvmreader.getIntrinsices(), detections);
+
+
     std::string frameKey = nvmreader.getCameras()[90].key();
     std::cout << "\nFrame 90 key: " << frameKey << std::endl;
     std::cout << "detections[" << frameKey << "]: " << detections[frameKey].size() << std::endl;
-
-
-    // Export some point clouds for visulization
-//    cloud.exportPCD("scene.pcd");
-//    cloud.exportPLY("scene.ply");
-//    PointCloud centersCloud = bboxPointsExtractor.createPointCloudWithCameraCenters();
-//    centersCloud.exportPLY("centers.ply");
-//    PointCloud camDirsCloud = bboxPointsExtractor.createPointCloudWithCameraDirections();
-//    camDirsCloud.exportPLY("cam_dirs.ply");
-//    PointCloud frustumsCloud = bboxPointsExtractor.createPointCloudWithFrustum();
-//    frustumsCloud.exportPLY("frustums.ply");
-
-//    // Create and export a frustum for the whole FOV
-//    bboxPointsExtractor.createPointCloudCenterAxisFrustum(90).exportPLY("CenterAxisFrustum.ply");
-
-    BBoxPointsExtractor bboxPointsExtractor(nvmreader.getPoints(), nvmreader.getCameras(), nvmreader.getIntrinsices(), detections);
-    // Let's first test with frame 90 as it has a big sign.
-    PointCloud accumulatedFrames;
-    for (int i = 80; i < 110; i++)
-    {
-        accumulatedFrames.add(cloud.filterForFrame(i));
-        PointCloud frame;
-        frame.add(cloud.filterForFrame(i));
-        frame.exportPLY("frame" + std::to_string(i)+".ply");
-    }
-    accumulatedFrames.exportPLY("accumulatedFrames.ply");
-
 
     // Create and export a frustum for a detection
     for (int i = 85; i < 96; i++)

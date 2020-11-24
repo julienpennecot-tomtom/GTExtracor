@@ -28,6 +28,7 @@ set(SRC
     src/detectionsreader.cpp
     src/bboxpointsextractor.cpp
     src/pointcloud.cpp
+    src/pointcloudutils.cpp
     )
 
 add_executable(GTExtractor ${SRC})

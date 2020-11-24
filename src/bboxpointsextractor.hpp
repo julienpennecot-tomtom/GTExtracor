@@ -19,11 +19,7 @@ public:
                         );
 
     void exportFrustumAssociatedToFrame(int frameIdx) const;
-    PointCloud createPointCloudWithCameraCenters() const;
-    PointCloud createPointCloudWithCameraDirections() const;
-    PointCloud createPointCloudWithFrustum() const;
 
-//    PointCloud createPointCloudCenterAndYDirections(int cameraIdx) const;
     PointCloud getPointsAssociatedWithDetectionOnFrame(int i, Detection& detection) const;
     PointCloud createPointCloudCenterAxisFrustum(int cameraIdx) const;
 
