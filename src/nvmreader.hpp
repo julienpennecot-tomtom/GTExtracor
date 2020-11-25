@@ -33,6 +33,8 @@ public:
     inline const PointCloud& getPoints() const {return m_Cloud;}
     inline const Intrinsics& getIntrinsices() const {return m_Intrinsics;}
     inline const std::vector<Camera>& getCameras() const {return m_Cameras;}
+    inline const std::vector<int>& getPointIndexForFrame() const {return m_PointIndexForFrame;}
+
 //    inline int getPointIndexForFrame(int i) const {return m_PointIndexForFrame[i];}
 
     PointCloud createPointCloudWithCameraCenters(float sphereRadius, const Eigen::Vector3i& color, int nPointsPerSphere) const;

@@ -71,7 +71,6 @@ NVMReader::NVMReader(const std::string& filepath)
     } else {
         std::cerr << "Error: could not find file: " << filepath << std::endl;
     }
-    std::cout << "Fx: " << m_Intrinsics.fx << " Cx: " << m_Intrinsics.cx << " Fy: " << m_Intrinsics.fy << " Cy: " << m_Intrinsics.cy << std::endl;
 }
 
 NVMReader::~NVMReader()

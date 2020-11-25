@@ -2,6 +2,7 @@
 
 #include <string>
 #include <sstream>
+#include <iostream>
 #include <eigen3/Eigen/Eigen>
 
 class Point{
@@ -33,6 +34,11 @@ public:
     inline const Eigen::Vector3i& color() const {return m_Color;}
     inline const int imIndex() const {return m_ImageIndex;}
 
+    friend std::ostream& operator<<(std::ostream& os, const Point& p)
+    {
+        os << "(" <<p.m_Pos.transpose() << "), (" << p.m_Color.transpose() << "), " << p.m_ImageIndex;
+            return os;
+    }
 
 private:
     Eigen::Vector3d m_Pos;
