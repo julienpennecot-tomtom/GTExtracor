@@ -27,8 +27,8 @@ int main() {
     }
 
     // Export some point clouds for visualization/debug purpose
-//    std::cout << "Exporting full scene. It might take a while" << std::endl;
-//    cloud.exportPLY("scene.ply");
+    std::cout << "Exporting full scene. It might take a while" << std::endl;
+    cloud.exportPLY("scene.ply");
 //    PointCloud centersCloud = nvmreader.createPointCloudWithCameraCenters(0.2, Eigen::Vector3i(255, 0, 0), 100);
 //    centersCloud.exportPLY("centers.ply");
 //    PointCloud camDirsCloud = nvmreader.createPointCloudWithCameraDirections(1., Eigen::Vector3i(255, 255, 255), 100);
@@ -47,7 +47,7 @@ int main() {
                                             );
 
 
-    std::vector<PointCloud> signs = bboxPointsExtractor.extractDetections();
+    std::vector<PointCloud> signs = bboxPointsExtractor.extractDetections(0, 7000);
     for (int i = 0; i < signs.size(); i++ ) {
         signs[i].exportPLY("Sign"+std::to_string(i)+".ply");
     }
@@ -56,7 +56,7 @@ int main() {
     for (int i = 0; i < signs.size(); i++ ) {
         allSigns.add(signs[i]);
     }
-    allSigns.exportPLY("AllSigns");
+    allSigns.exportPLY("AllSigns.ply");
 
 //    std::string frameKey = nvmreader.getCameras()[90].key();
 //    std::cout << "\nFrame 90 key: " << frameKey << std::endl;
