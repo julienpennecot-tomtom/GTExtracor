@@ -29,6 +29,8 @@ set(SRC
     src/bboxpointsextractor.cpp
     src/pointcloud.cpp
     src/pointcloudutils.cpp
+    src/positionextractor.cpp
+
     )
 
 add_executable(GTExtractor ${SRC})

@@ -79,5 +79,19 @@ namespace PointCloudUtils {
         }
     }
 
+    bool computeCentroid(const PointCloud& cloud, Eigen::Vector3d& centroid)
+    {
+        if (cloud.size() == 0) {
+            return false;
+        }
+        centroid = Eigen::Vector3d(0.0f, 0.0f, 0.0f);
+        for (const auto& point : cloud.points())
+        {
+            centroid += point.pos();
+        }
+        centroid /= cloud.size();
+        return true;
+    }
+
 } // namespace PointCloudUtils
 

@@ -40,6 +40,10 @@ Eigen::Vector3d BBoxPointsExtractor::project2dPointIn3dSpace(const Eigen::Vector
     return Eigen::Vector3d(p[0] - cx, p[1] - cy, f);
 }
 
+std::vector<PointCloud> BBoxPointsExtractor::extractDetections() const{
+    return extractDetections(0, m_Detections.size());
+}
+
 std::vector<PointCloud> BBoxPointsExtractor::extractDetections(int first, int last) const
 {
     std::vector<PointCloud> signs;

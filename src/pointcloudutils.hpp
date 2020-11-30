@@ -33,4 +33,6 @@ namespace PointCloudUtils
                    int nPoints
                    );
 
+    bool computeCentroid(const PointCloud& cloud, Eigen::Vector3d& centroid);
+
 }

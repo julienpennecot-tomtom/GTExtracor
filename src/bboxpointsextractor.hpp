@@ -19,6 +19,7 @@ public:
                         const std::vector<int>& pointIndexForFrame
                         );
 
+    std::vector<PointCloud> extractDetections() const;
     std::vector<PointCloud> extractDetections(int first, int last) const;
     PointCloud getPointsAssociatedWithDetectionOnFrame(int i, const Detection& detection) const;
 
